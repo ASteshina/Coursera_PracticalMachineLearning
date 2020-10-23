@@ -1,5 +1,5 @@
-# Coursera_PracticleMachineLearning
-*Coursera's Practicle Machine Learning course project*
+# Coursera_PracticalMachineLearning
+*Coursera's Practical Machine Learning course project*
 
 **Project Info** 
 
