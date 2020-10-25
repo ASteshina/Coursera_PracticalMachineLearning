@@ -1,0 +1,83 @@
+---
+title: "Coursera_PracticalMachineLeaning"
+author: "Anastasia Steshina"
+date: "10/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Project Info
+
+The main goal of the Project is to quantify how well an individual perform for a particular activity. This will be accomplished by training a prediction model on the accelerometer data using a random forest classifier.
+
+The training data and the test data for this project come from this source: http://groupware.les.inf.puc-rio.br/har.
+
+### Loading libraries, setting seed for reproducibility
+
+```{r}
+library(caret)
+library(corrplot)
+library(randomForest)
+```
+
+Loading data
+
+```{r load, echo=FALSE }
+train <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv",sep = ",", na.strings = c("", "NA"))
+validation <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv",sep = ",", na.strings = c("", "NA"))
+```
+
+Cleaning data:
+```{r clean, cache=TRUE}
+train_noNA <- train[ , colSums(is.na(train)) == 0] # Removing variables with NA
+train_clean <- train_noNA[,-c(1:7)] # Removing unnessary columns
+
+validation_noNA <- validation[ , colSums(is.na(validation)) == 0] # Removing variables with NA
+validation_clean <- validation_noNA[,-c(1:7)] # Removing unnessary columns
+```
+
+
+Creating data partitions 70% training, 30% test
+```{r partition, cache=TRUE}
+set.seed(7)
+inTrain = createDataPartition(y=train_clean$classe, p=0.7, list=FALSE)
+training = train_clean[inTrain,]
+testing = train_clean[-inTrain,]
+```
+
+
+Identifying variables that highly correlate with each other and can be removed before training the model
+```{r correlation, cache=TRUE}
+classeIndex <- which(names(training) == "classe")
+correlationMatrix <- cor(training[, -classeIndex])
+excludeColumns <- findCorrelation(correlationMatrix, cutoff=0.9, exact=TRUE) # Exclude highly correlated features
+corrplot(correlationMatrix, method="color", type="lower", order="hclust", tl.cex=0.70, tl.col="black", tl.srt = 45, diag = FALSE)
+training <- training[, -excludeColumns]
+testing <- testing[, -excludeColumns]
+```
+
+Build prediction model using Random Forest:
+```{r train, , cache=TRUE}
+model <- randomForest(classe ~ .,   data=training, ntree = 50)
+```
+
+
+Evaluating the model:
+```{r evaluate_model, , cache=TRUE}
+predictions <- predict(model, testing)
+confusionMatrix(predictions, testing$classe)
+modelAcc <- confusionMatrix(predictions, testing$classe)$overall[[1]]
+```
+
+The model is `r modelAcc` accurate on the testing set.
+
+Predictions on the validation set:
+```{r validation, , cache=TRUE}
+predictions <- predict(model, validation)
+predictions
+```
+
+
